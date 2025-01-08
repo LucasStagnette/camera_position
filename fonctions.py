@@ -1,10 +1,16 @@
 import networkx as nx
 
-def lecture(fichier:str):
+from math import sqrt
+from random import random
+from typing import List, Dict, Tuple
+
+def lecture(fichier:str) -> Tuple[nx.DiGraph,Dict, List]:
     '''
-    fichier:str
-    return Tuple[dict, list, nx.graph]
-    fonction qui lis les données d'un fichier et qui retourne le graphe, les positions et les alignements
+    fonction qui lis les donnees d'un fichier et qui retourne le graphe, les positions et les alignements
+    Args:
+        fichier (str): emplacement fichier entree
+    Returns:
+        Tuple[nx.DiGraph,dict, list]
     '''
 
     g = nx.Graph()
@@ -33,8 +39,9 @@ def lecture(fichier:str):
     aretes = [i.split(";") for i in c.split("\n")[1:]]
     aretes = [item for sublist in aretes for item in sublist]
     edges = [(i[0], i[2]) for i in aretes]
-    g.add_edges_from(edges)
-    print(alignements)
+    g:nx.DiGraph=nx.DiGraph()
+
+    return (g.add_edges_from(edges),positions,alignements)
 
 
-lecture("graphe.txt")
+Graph,positions,alignements = lecture("graphe.txt")
