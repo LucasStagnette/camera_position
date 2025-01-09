@@ -20,23 +20,22 @@ def lecture(fichier:str) -> Tuple[nx.Graph,Dict[int,Tuple[float,float]], List[Li
     with open(fichier, "r") as file:
         # lecture du fichier et separation de la partie position et alignement dans 2 variables
         a = file.read().split("!")
-        b = a[0].split("\n")[0:-1]
-        print(b)
-        c = a[1]
+        print(a)
+        partie_pos = a[0].split("\n")[0:-1]
+        partie_alignement = a[1]
 
         # placement des positions avec leur sommet dans un dico
-        for point in b:
-            point=point.split(' ')
-            print(point)
-            positions[point[0]] = (int(point[2]), int(point[4]))
+        for point in partie_pos:
+            list_point=point.split(' ')
+            positions[int(list_point[0])] = (float(list_point[1]), float(list_point[2]))
 
         # placement des sommets alignes
-        for ligne in c.split("\n")[1:]:
+        for ligne in partie_alignement.split("\n")[1:]:
             temp = []
-            for carac in ligne:
+            for caractere in ligne:
                 # on verifie si c'est un nombre et qu'il n'a pas deja ete ajoute
-                if carac not in temp and carac in ["0","1","2","3","4","5","6","7","8","9"]:
-                    temp.append(carac)
+                if caractere not in temp and caractere in ["0","1","2","3","4","5","6","7","8","9"]:
+                    temp.append(caractere)
             alignements.append(temp)
 
     aretes = [i.split(";") for i in c.split("\n")[1:]]
@@ -94,10 +93,12 @@ def traitement_graph(Graph:nx.Graph,position_sommet:Dict[int,Tuple[float,float]]
                 nb_points +=1
 
             distance = longueur/(nb_points+1)
-            liste_sommet_prexistant:List=list(Graph.nodes()).sort()
             ancien_sommet=arete[0]
             for i in range(nb_points):
-                nouveau_sommets=liste_sommet_prexistant[-1]+1
+                liste_sommet_prexistant:List=Graph.nodes()
+                liste_sommet_prexistant.sort()
+                print(liste_sommet_prexistant)
+                nouveau_sommets=liste_sommet_prexistant[-1].sort()+1
                 #Calcul des positions
                 pos_x=((i+1)*(position_sommet[nouveau_sommets][0]-position_sommet[ancien_sommet][0]/nb_points))
                 pos_y=((i+1)*(position_sommet[nouveau_sommets][1]-position_sommet[ancien_sommet][1]/nb_points))
