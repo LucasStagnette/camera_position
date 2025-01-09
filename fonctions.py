@@ -89,17 +89,27 @@ def traitement_graph(Graph:nx.Graph,position_sommet:Dict[int,Tuple[float,float]]
     return Graph
 
 def valuation_arete(graphe, alignements:list, positions:dict):
+    '''
+    :param graphe: nx.graph ; graphe des couloirs
+    :param alignements: list ; liste des groupes d'alignement
+    :param positions: dict ; dictionnaire des sommets avec leur position
+    Fonction qui calcul un poids pour chaque arete, le poids est definit en label dans le graphe
+    '''
+
+    # on parcours les aretes une a une
     for arete in list(graphe.edges()):
+
+        # on definit deux variables avec le sommet de depart et d'arrivee de l'arete
         sommet1, sommet2 = arete[0], arete[1]
+        # on definit le poids de chaque arete a 0
         graphe[sommet1][sommet2]["poids"] = 0
-        indice = 0
 
-        for align in alignements:
-
-            if str(sommet1) in align and str(sommet2) in align:
-                break
-            indice += 1
-
-        for sommet in alignements[indice]:
-            if longueur_arete(positions, sommet, sommet1) <= 10 and longueur_arete(positions, sommet, sommet2) <= 10:
-                graphe[sommet1][sommet2]["poids"] += 1
+        # on parcours tous les groupes d'alignements
+        for groupe in alignements:
+            # on regarde si l'arete est dans le groupe d'alignement
+            if str(sommet1) in groupe and str(sommet2) in groupe:
+                # on parcours tous les sommets du groupe pour voir si leur distance aux 2 points de l'arete leur permet de la couvrir entierement
+                for sommet in groupe:
+                    if longueur_arete(positions, sommet, sommet1) <= 10 and longueur_arete(positions, sommet, sommet2) <= 10:
+                        # alors on rajoute +1 au poids de l'arete
+                        graphe[sommet1][sommet2]["poids"] += 1
