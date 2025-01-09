@@ -46,75 +46,34 @@ def lecture(fichier:str) -> Tuple[nx.Graph,Dict[int,Tuple[float,float]], List[Li
 
     return (g,positions,alignements)
 
-def longueur_arete(position_sommet:Dict[int,Tuple[float,float]],sommet_1,sommet_2) -> float:
-    """
-    Calcule la longueur entre 2 sommets.
-
-    Args:
-        Graphe (nx.Graph): Graphe des couloir
-        position_sommet (Dict[str:Tuple[str,str]): Coordonnees des sommets
-
-    Returns:
-        int: Distance entre les deux points
-    """
-    #Recuperation des coordonnees X Y de chacune des extremite des aretes
-    sommet_a=position_sommet[sommet_1]
-    sommet_b=position_sommet[sommet_2]
-    #Calcule de la longueur
-    longueur:float=sqrt((sommet_b[0]-sommet_a[0])**2+(sommet_b[1]-sommet_a[1])**2)
-    return longueur
-
-
-def traitement_graph(Graph:nx.Graph,position_sommet:Dict[int,Tuple[float,float]]) -> nx.Graph :
-    """
-    Cette fonction prend en entré un graph et la postion de ces sommets,
-    et retourne un graphe avec pour chaque arête la longeur de celle si, si elle fait plus de 10m l'arete est divisé en plus petit segment
-    
-    Args:
-        Graphe (nx.Graph): Graphe des couloir
-        position_sommet (Dict[str:Tuple[str,str]): Coordonnees des sommets
-
-    Returns:
-        nx.Graph: Graph avec les longeur des arete.
+def longueur_arete(Graph:nx.Graph,position_sommet:Dict[str,Tuple[str,str]]) -> nx.Graph :
+    '''Cette fonction prends en entree un graphe et la position de ses sommets
+    et retourne un graphe avec pour chaque arete la longeur de celle ci.
         
-    """
-    #On cree une liste d'arrete initialement vide
+    Args:
+        Graphe (nx.Graph): Graphe des couloirs
+        position_sommet (Dict[str:Tuple[str,str]): Le mot de passe pour la connexion.
+        alignements (List[List[str,str]]): Liste contenant les alignements des points.
+
+    Returns:
+        nx.Graph: Graph avec les longeurs des aretes.
+        
+    '''
+    #On cree une liste d'arete initialement vide
     liste_arrete=[]
 
-    #Parcour de toute les aretes du Graph
+    #Parcours de toutes les aretes du Graphe
     for arete in Graph.edges():
-        
-        longueur=longueur_arete(position_sommet,arete[0],arete[1])
-        
-        #Si la longeur fait plus de 10m
-        if longueur>10:
-            #Calcule du nombre de postion potentiel necessaire
-            nb_points:int = int(longueur//10 - 1)
-            #Ajustement si nessecaire
-            if longueur%10 != 0:
-                nb_points +=1
-
-            distance = longueur/(nb_points+1)
-            liste_sommet_prexistant:List=list(Graph.nodes()).sort()
-            ancien_sommet=arete[0]
-            for i in range(nb_points):
-                nouveau_sommets=liste_sommet_prexistant[-1]+1
-                #Calcul des positions
-                pos_x=((i+1)*(position_sommet[nouveau_sommets][0]-position_sommet[ancien_sommet][0]/nb_points))
-                pos_y=((i+1)*(position_sommet[nouveau_sommets][1]-position_sommet[ancien_sommet][1]/nb_points))
-
-                position_sommet[nouveau_sommets]=(pos_x,pos_y)
-                liste_arrete.append((arete[0],nouveau_sommets,{'longeur':longueur}))
-
-                ancien_sommet=nouveau_sommets
-
-        else: 
-            #Ajout tu tuple (sommet_debut,sommet_fin,{'longeur':valeur_longeur}) dans la liste des aretes
-            liste_arrete.append((arete[0],arete[1],{'longeur':longueur}))
-        
+        #Recuperation des coordonnees X Y de chacune des extremites des aretes
+        pos_a=position_sommet[arete[0]]
+        pos_b=position_sommet[arete[1]]
+        #Calcul de la longueur
+        longueur=sqrt((pos_b[0]-pos_a[0])**2+(pos_b[1]-pos_a[1])**2)
+        #Ajout du tuple (sommet_debut,sommet_fin,{'longeur':valeur_longeur}) dans la liste des aretes
+        liste_arrete.append((arete[0],arete[1],{'longeur':longueur}))
     
-    #Création d'un graph vide
+    #Creation d'un graphe vide
     Graphe_final:nx.Graph=nx.Graph()
-    #Ajout des aretes et renvoie
+    #Ajout des aretes et renvoit
     Graphe_final.add_edges_from(liste_arrete)
     return Graphe_final
