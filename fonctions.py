@@ -38,7 +38,7 @@ def lecture(fichier:str) -> Tuple[nx.Graph,Dict[int,Tuple[float,float]], List[Li
                     temp.append(caractere)
             alignements.append(temp)
 
-    aretes = [i.split(";") for i in c.split("\n")[1:]]
+    aretes = [i.split(";") for i in partie_alignement.split("\n")[1:]]
     aretes = [item for sublist in aretes for item in sublist]
     edges:List[Tuple[int,int]] = [(int(i[0]),int(i[2])) for i in aretes]
     g.add_edges_from(edges)
@@ -84,37 +84,6 @@ def traitement_graph(Graph:nx.Graph,position_sommet:Dict[int,Tuple[float,float]]
         
         longueur=longueur_arete(position_sommet,arete[0],arete[1])
         
-        #Si la longeur fait plus de 10m
-        if longueur>10:
-            #Calcule du nombre de postion potentiel necessaire
-            nb_points:int = int(longueur//10 - 1)
-            #Ajustement si nessecaire
-            if longueur%10 != 0:
-                nb_points +=1
-
-            distance = longueur/(nb_points+1)
-            ancien_sommet=arete[0]
-            for i in range(nb_points):
-                liste_sommet_prexistant:List=Graph.nodes()
-                liste_sommet_prexistant.sort()
-                print(liste_sommet_prexistant)
-                nouveau_sommets=liste_sommet_prexistant[-1].sort()+1
-                #Calcul des positions
-                pos_x=((i+1)*(position_sommet[nouveau_sommets][0]-position_sommet[ancien_sommet][0]/nb_points))
-                pos_y=((i+1)*(position_sommet[nouveau_sommets][1]-position_sommet[ancien_sommet][1]/nb_points))
-
-                position_sommet[nouveau_sommets]=(pos_x,pos_y)
-                liste_arrete.append((arete[0],nouveau_sommets,{'longeur':longueur}))
-
-                ancien_sommet=nouveau_sommets
-
-        else: 
-            #Ajout tu tuple (sommet_debut,sommet_fin,{'longeur':valeur_longeur}) dans la liste des aretes
-            liste_arrete.append((arete[0],arete[1],{'longeur':longueur}))
+        Graph[arete[0]][arete[1]]['longeur']=longueur
         
-    
-    #Création d'un graph vide
-    Graphe_final:nx.Graph=nx.Graph()
-    #Ajout des aretes et renvoie
-    Graphe_final.add_edges_from(liste_arrete)
-    return Graphe_final
+    return Graph
