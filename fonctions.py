@@ -26,7 +26,7 @@ def lecture(fichier:str) -> Tuple[nx.Graph,Dict, List]:
 
         # placement des positions avec leur sommet dans un dico
         for point in b:
-            positions[int(point[0])] = (int(point[2]), int(point[4]))
+            positions[point[0]] = (int(point[2]), int(point[4]))
 
         # placement des sommets alignes
         for ligne in c.split("\n")[1:]:
@@ -39,7 +39,7 @@ def lecture(fichier:str) -> Tuple[nx.Graph,Dict, List]:
 
     aretes = [i.split(";") for i in c.split("\n")[1:]]
     aretes = [item for sublist in aretes for item in sublist]
-    edges = [(int(i[0]), int(i[2])) for i in aretes]
+    edges = [(i[0], i[2]) for i in aretes]
     g.add_edges_from(edges)
 
     return (g,positions,alignements)
@@ -76,23 +76,5 @@ def longueur_arete(Graph:nx.Graph,position_sommet:Dict[str,Tuple[str,str]]) -> n
     Graphe_final.add_edges_from(liste_arrete)
     return Graphe_final
 
-def valuation_arete(graphe, alignements:list, positions:dict):
-    for arete in list(graphe.edges()):
-        sommet1, sommet2 = arete[0], arete[1]
-        graphe[sommet1][sommet2]["poids"] = 0
-        indice = 0
-
-        for align in alignements:
-            print(align)
-            if str(sommet1) in align and str(sommet2) in align:
-                break
-            indice += 1
-        print(indice)
-        for sommet in alignements[indice]:
-            if longueur_arete(positions, sommet, sommet1) <= 10 and longueur_arete(positions, sommet, sommet2) <= 10:
-                graphe[sommet1][sommet2]["poids"] += 1
-
-
 G,positions,alignements = lecture("graphe.txt")
 G=longueur_arete(G,positions)
-valuation_arete(G, alignements, positions)
