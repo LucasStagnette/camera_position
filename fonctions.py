@@ -57,8 +57,8 @@ def longueur_arete(position_sommet:Dict[int,Tuple[float,float]],sommet_1,sommet_
         int: Distance entre les deux points
     """
     #Recuperation des coordonnees X Y de chacune des extremite des aretes
-    sommet_a=position_sommet[sommet_1]
-    sommet_b=position_sommet[sommet_2]
+    sommet_a=position_sommet[int(sommet_1)]
+    sommet_b=position_sommet[int(sommet_2)]
     #Calcule de la longueur
     longueur:float=sqrt((sommet_b[0]-sommet_a[0])**2+(sommet_b[1]-sommet_a[1])**2)
     return longueur
@@ -95,12 +95,11 @@ def valuation_arete(graphe, alignements:list, positions:dict):
         indice = 0
 
         for align in alignements:
-            print(align)
+
             if str(sommet1) in align and str(sommet2) in align:
                 break
             indice += 1
-        print(indice)
+
         for sommet in alignements[indice]:
             if longueur_arete(positions, sommet, sommet1) <= 10 and longueur_arete(positions, sommet, sommet2) <= 10:
                 graphe[sommet1][sommet2]["poids"] += 1
-
