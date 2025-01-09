@@ -2,9 +2,9 @@ import networkx as nx
 import matplotlib.pyplot as plt
 
 from math import sqrt
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Set
 
-def lecture(fichier:str) -> Tuple[nx.Graph,Dict[int,Tuple[float,float]], List[List[int]]]:
+def lecture(fichier:str):
     """
     Fonction qui lis les donnees d'un fichier et qui retourne le graphe, les positions et les alignements
     Args:
@@ -15,7 +15,7 @@ def lecture(fichier:str) -> Tuple[nx.Graph,Dict[int,Tuple[float,float]], List[Li
 
     g = nx.Graph()
     positions ={}
-    alignements = []
+    droites = []
 
     with open(fichier, "r") as file:
         # lecture du fichier et separation de la partie position et alignement dans 2 variables
@@ -23,26 +23,27 @@ def lecture(fichier:str) -> Tuple[nx.Graph,Dict[int,Tuple[float,float]], List[Li
         partie_pos = a[0].split("\n")[0:-1]
         partie_alignement = a[1].split("\n")[1:]
 
-        # placement des positions avec leur sommet dans un dico
-        for point in partie_pos:
-            list_point=point.split(' ')
-            positions[int(list_point[0])] = (float(list_point[1]), float(list_point[2]))
+    # Extraction des positions
+    for ligne in partie_pos:
+        list_point=ligne.split(' ')
+        positions[int(list_point[0])] = (float(list_point[1]), float(list_point[2]))
 
-        # placement des sommets alignes
-        for ligne in partie_alignement:
-            temp = []
-            for caractere in ligne:
-                # on verifie si c'est un nombre et qu'il n'a pas deja ete ajoute
-                if caractere not in temp and caractere in ["0","1","2","3","4","5","6","7","8","9"]:
-                    temp.append(int(caractere))
-            alignements.append(temp)
-
+    # Recuperation des sommets alignes
+    for ligne in partie_alignement:
+        #Ensemble des points sur la droite initialement vide
+        droite = set()
+        #Separe tout les nombre selon ' ' et ';' et les met dans un set et l'ajoute a la liste
+        for number in ligne.split(';'):
+            points = set(number.split())
+            droite.update(points)
+        
+        droites.append(droite)  # Ajoute l'ensemble à la liste des droites
     aretes = [i.split(";") for i in partie_alignement]
     aretes = [item for sublist in aretes for item in sublist]
     edges:List[Tuple[int,int]] = [(int(i[0]),int(i[2])) for i in aretes]
     g.add_edges_from(edges)
 
-    return (g,positions,alignements)
+    return (g,positions,droites)
 
 def longueur_arete(position_sommet:Dict[int,Tuple[float,float]],sommet_1,sommet_2) -> float:
     """
@@ -62,7 +63,7 @@ def longueur_arete(position_sommet:Dict[int,Tuple[float,float]],sommet_1,sommet_
     longueur:float=sqrt((sommet_b[0]-sommet_a[0])**2+(sommet_b[1]-sommet_a[1])**2)
     return longueur
 
-def division_arete_trop_longue(Graph:nx.Graph,position_sommet,arete,longueur):
+def division_arete_trop_longue(Graph:nx.Graph,position_sommet,alignements:List,arete,longueur):
     #Suprresion de l'arete trop longue
     Graph.remove_edge(arete[0],arete[1])
 
@@ -79,8 +80,10 @@ def division_arete_trop_longue(Graph:nx.Graph,position_sommet,arete,longueur):
 
 
     #On doit crée nb+1 arete
+    align_temp=[]
     for i in range(nb_points):
-        print("i=",i)
+
+        align_temp.append(premier_sommet)
 
         #Preparation sommets intermediaire
         sommet_prexistant:List=list(Graph.nodes())
@@ -102,11 +105,12 @@ def division_arete_trop_longue(Graph:nx.Graph,position_sommet,arete,longueur):
         premier_sommet=deuxieme_sommet
 
     #Ajout de la deuxieme arete qui manque
+    #align_temp.append(deuxieme_sommet)
     liste_arrete.append((deuxieme_sommet,arete[1],{'longueur':distance}))
     Graph.add_edges_from(liste_arrete)
-    return Graph,position_sommet
+    return Graph,position_sommet,alignements
 
-def traitement_graph(Graph:nx.Graph,position_sommet:Dict[int,Tuple[float,float]]) -> nx.Graph :
+def traitement_graph(Graph:nx.Graph,position_sommet:Dict[int,Tuple[float,float]],alignement) -> nx.Graph :
     """
     Cette fonction prend en entré un graph et la postion de ces sommets,
     et retourne un graphe avec pour chaque arête la longueur de celle si, si elle fait plus de 10m l'arete est divisé en plus petit segment
@@ -128,9 +132,8 @@ def traitement_graph(Graph:nx.Graph,position_sommet:Dict[int,Tuple[float,float]]
     
     for arete in liste_arete_init:
         longueur=Graph[arete[0]][arete[1]].get('longueur')
-        print("arete:",arete,longueur)
         if longueur>10:
-            Graph,position_sommet=division_arete_trop_longue(Graph,position_sommet,arete,longueur)
+            division_arete_trop_longue(Graph,position_sommet,alignement,arete,longueur)
     return Graph
 
 def valuation_arete(graphe, alignements:list, positions:dict):
