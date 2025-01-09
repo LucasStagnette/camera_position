@@ -87,3 +87,20 @@ def traitement_graph(Graph:nx.Graph,position_sommet:Dict[int,Tuple[float,float]]
         Graph[arete[0]][arete[1]]['longeur']=longueur
         
     return Graph
+
+def valuation_arete(graphe, alignements:list, positions:dict):
+    for arete in list(graphe.edges()):
+        sommet1, sommet2 = arete[0], arete[1]
+        graphe[sommet1][sommet2]["poids"] = 0
+        indice = 0
+
+        for align in alignements:
+            print(align)
+            if str(sommet1) in align and str(sommet2) in align:
+                break
+            indice += 1
+        print(indice)
+        for sommet in alignements[indice]:
+            if longueur_arete(positions, sommet, sommet1) <= 10 and longueur_arete(positions, sommet, sommet2) <= 10:
+                graphe[sommet1][sommet2]["poids"] += 1
+
