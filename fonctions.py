@@ -4,124 +4,146 @@ import matplotlib.pyplot as plt
 from math import sqrt
 from typing import List, Dict, Tuple, Set
 
-def lecture(fichier:str):
+def lecture(fichier:str) -> Tuple[nx.Graph,Dict[int,Tuple[float,float]], List[Set[int]]]:
     """
     Fonction qui lis les donnees d'un fichier et qui retourne le graphe, les positions et les droites
     Args:
         fichier (str): emplacement fichier entree
     Returns:
-        Tuple[nx.Graph,dict, list]
+        Tuple[nx.Graph,Dict[int,Tuple[float,float]], List[Set[str]]]
     """
 
-    g = nx.Graph()
-    positions ={}
-    droites = []
+    #Initalisation des variables vides
+    G:nx.Graph = nx.Graph()
+    positions:Dict[int,Tuple[float,float]] = {}
+    droites:List[Set[int]] = []
 
     with open(fichier, "r") as file:
         # lecture du fichier et separation de la partie position et alignement dans 2 variables
-        a = file.read().split("!")
-        partie_pos = a[0].split("\n")[0:-1]
-        partie_alignements = a[1].split("\n")[1:]
+        contenue_fichier:List[str] = file.read().split("!")
+        partie_pos:List[str] = contenue_fichier[0].split("\n")[0:-1]
+        partie_alignements:List[str] = contenue_fichier[1].split("\n")[1:]
 
     # Extraction des positions
     for ligne in partie_pos:
-        list_point=ligne.split(' ')
-        positions[int(list_point[0])] = (float(list_point[1]), float(list_point[2]))
+        liste_points:List[str] = ligne.split(' ')
+        positions[int(liste_points[0])] = (float(liste_points[1]), float(liste_points[2]))
 
-    # Recuperation des sommets alignes
+    # Recuperation des aretes du graph et sommets alignes
+    aretes:List[List[str]] = []
     for ligne in partie_alignements:
         #Ensemble des points sur la droite initialement vide
         droite = set()
-        #Separe tout les nombre selon ' ' et ';' et les met dans un set et l'ajoute a la liste
-        for number in ligne.split(';'):
-            points = set(number.split())
-            droite.update(points)
-        
-        droites.append(droite)  # Ajoute l'ensemble à la liste des droites
-    aretes = [i.split(";") for i in partie_alignements]
-    aretes = [item for sublist in aretes for item in sublist]
-    edges:List[Tuple[int,int]] = [(int(i[0]),int(i[2])) for i in aretes]
-    g.add_edges_from(edges)
+        #Separe tout les nombre selon ';'
+        for arete in ligne.split(';'):
+            aretes.append(arete.split()) #Recupere tout les aretes de la ligne
+            droite.update({int(i) for i in arete.split()}) #Recupere tout les sommet de la ligne
+        droites.append(droite)  # Ajoute la droite à la liste des droites
 
-    return (g,positions,droites)
+    #Ajout des arete dans une liste et convertion des types
+    edges:List[Tuple[int,int]] = [(int(i[0]),int(i[1])) for i in aretes]
+    #Ajout des arete dans le Graph
+    G.add_edges_from(edges)
 
-def longueur_arete(position_sommet:Dict[int,Tuple[float,float]],sommet_1,sommet_2) -> float:
+    return (G,positions,droites)
+
+def longueur_arete(position_sommet:Dict[int,Tuple[float,float]],sommet_1:int,sommet_2:int) -> float:
     """
     Calcule la longueur entre 2 sommets.
 
     Args:
-        Graphe (nx.Graph): Graphe des couloir
         position_sommet (Dict[str:Tuple[str,str]): Coordonnees des sommets
+        sommet_1 (int): Premier sommet
+        sommet_2 (int): Second sommet
 
     Returns:
-        int: Distance entre les deux points
+        float: Distance entre les deux sommets
     """
+    
     #Recuperation des coordonnees X Y de chacune des extremite des aretes
-    sommet_a=position_sommet[int(sommet_1)]
-    sommet_b=position_sommet[int(sommet_2)]
+    pos_sommet_1:Tuple[float,float] = position_sommet[sommet_1]
+    pos_sommet_2:Tuple[float,float] = position_sommet[sommet_2]
+    
     #Calcule de la longueur
-    longueur:float=sqrt((sommet_b[0]-sommet_a[0])**2+(sommet_b[1]-sommet_a[1])**2)
+    longueur:float = sqrt((pos_sommet_2[0]-pos_sommet_1[0])**2+(pos_sommet_2[1]-pos_sommet_1[1])**2)
+    
     return longueur
 
-def division_arete_trop_longue(Graph:nx.Graph,position_sommet,droites:List[Set[int]],arete,longueur):
-    sommet_a,sommet_b=arete[0],arete[1]
+def division_arete_trop_longue(Graph:nx.Graph,position_sommet:Dict[int,Tuple[float,float]],droites:List[Set[int]],arete:Tuple[int,int],longueur:float) -> Tuple[nx.Graph,Dict[int,Tuple[float,float]], List[Set[int]]]:
+    """
+    Divise une arete de plus de 10m en sous aretes.
+
+    Args:
+        Graph (nx.Graph): Graphe
+        position_sommet (Dict[int,Tuple[float,float]]): Position des sommets
+        droites (List[Set[int]]): Liste des droites
+        arete (Tuple[int,int]): arete a divise
+        longueur (float): longueur de l'arete deja calculer
+
+    Returns:
+        Tuple[nx.Graph,Dict[int,Tuple[float,float]], List[Set[str]]]: 
+    """
+    sommet_a,sommet_b = arete[0],arete[1]
+    
     #Suprresion de l'arete trop longue
     Graph.remove_edge(sommet_a,sommet_b)
 
     #Calcule du nombre de postion potentiel necessaire
     nb_points:int = int(longueur//10 - 1)
-    #Ajustement si nessecaire
+    #Ajustement si necessaire
     if longueur%10 != 0:
         nb_points +=1
-    #On calcule l'ecartement nessecaire
-    distance = longueur/(nb_points+1)
+    #On calcule l'ecartement necessaire
+    distance:float = longueur/(nb_points+1)
 
-    premier_sommet=sommet_a
+    premier_sommet:int = sommet_a
 
     #Liste temporaire des nouveau arete a rajouter sur le graph
-    arete_temp=[]
+    arete_temp = []
     #Liste temporaire des nouveau sommet a rajouter sur la droite
-    align_temp=[]
+    align_temp = []
 
-    #On doit crée nb+1 arete
+    #On doit crée nb+1 aretes
     for i in range(nb_points):
 
-       #Preparation sommets intermediaire
-        sommet_prexistant:List=list(Graph.nodes())
-        liste_sommet_prexistant=[int(i) for i in sommet_prexistant]
-        liste_sommet_prexistant.sort()
-        print(liste_sommet_prexistant)
-        #Nom du nouveau sommet:
-        deuxieme_sommet=liste_sommet_prexistant[-1]+1
+        #Preparation sommets intermediaire : Determiner le nom d nouveau sommet
+        liste_sommet_prexistant: list[int] = sorted([int(i) for i in list(Graph.nodes())])
 
-        align_temp.append(deuxieme_sommet)
-        #Calcul des positions
+        #Nom du nouveau sommet :
+        deuxieme_sommet:int = liste_sommet_prexistant[-1]+1
+
+        #Calcul de sa positions
         pos_x=((i+1)*(position_sommet[sommet_b][0]+position_sommet[sommet_a][0])/(nb_points+1))
         pos_y=((i+1)*(position_sommet[sommet_b][1]+position_sommet[sommet_a][1])/(nb_points+1))
+
+        #Ajout du nouveau sommet dans la liste des nouveaux sommets alignes
+        align_temp.append(deuxieme_sommet)
 
         #Ajout du nouveau sommet dans le dictionaire des position
         if not(i==nb_points):
             position_sommet[deuxieme_sommet]=(pos_x,pos_y)
 
-        #Ajout du nouveau sommet dans le graph 
+        #Ajout de la nouvelle arete dans la liste des nouvelle aretes
         arete_temp.append((premier_sommet,deuxieme_sommet,{'longueur':distance}))
-        premier_sommet=deuxieme_sommet
+        
+        #Changement du premier sommet pour calculer la prochaine arete
+        premier_sommet = deuxieme_sommet
+    
+    #Ajout de la derniere arete dans la liste des nouvelle aretes
+    arete_temp.append((deuxieme_sommet,sommet_b,{'longueur':distance}))
+    
+    #Ajout des nouvelle arete dans le Graph
+    Graph.add_edges_from(arete_temp)
 
     #Ajout des nouveau sommet sur la droite
-    print('droite avant:',droites)
     for droite in droites:
-        print("index:",droites.index(droite))
         # on regarde si l'arete est sur la droite
-        if str(sommet_a) in droite and str(sommet_b) in droite:
-            print("dedans")
-            droites[droites.index(droite)].update(str(i) for i in align_temp)
-    print('droite apres:',droites)
+        if sommet_a in droite and sommet_b in droite:
+            droites[droites.index(droite)].update(i for i in align_temp)
 
-    arete_temp.append((deuxieme_sommet,sommet_b,{'longueur':distance}))
-    Graph.add_edges_from(arete_temp)
     return Graph,position_sommet,droites
 
-def traitement_graph(Graph:nx.Graph,position_sommet:Dict[int,Tuple[float,float]],alignement) -> nx.Graph :
+def traitement_graph(Graph:nx.Graph,position_sommet:Dict[int,Tuple[float,float]],droites:List[Set[int]]) -> None :
     """
     Cette fonction prend en entré un graph et la postion de ces sommets,
     et retourne un graphe avec pour chaque arête la longueur de celle si, si elle fait plus de 10m l'arete est divisé en plus petit segment
@@ -129,30 +151,42 @@ def traitement_graph(Graph:nx.Graph,position_sommet:Dict[int,Tuple[float,float]]
     Args:
         Graphe (nx.Graph): Graphe des couloir
         position_sommet (Dict[str:Tuple[str,str]): Coordonnees des sommets
+        droites (List[Set[int]]): Liste des droites
 
     Returns:
-        nx.Graph: Graph avec les longueur des arete.
-        
+        None  
     """
 
     #Parcour de toute les aretes du Graph
     for arete in Graph.edges():
-        longueur=longueur_arete(position_sommet,arete[0],arete[1])
-        Graph[arete[0]][arete[1]]['longueur']=longueur
-    liste_arete_init=list(Graph.edges())
-    
-    for arete in liste_arete_init:
-        longueur=Graph[arete[0]][arete[1]].get('longueur')
-        if longueur>10:
-            division_arete_trop_longue(Graph,position_sommet,alignement,arete,longueur)
-    return Graph
 
-def valuation_arete(graphe, droites:list, positions:dict):
+        #Calcule de sa longueur
+        longueur:float = longueur_arete(position_sommet,arete[0],arete[1])
+
+        #Ajout du label longueur
+        Graph[arete[0]][arete[1]]['longueur']=longueur
+        
+    #Extraction de la liste des aretes 
+    liste_arete_init:List[Tuple[int,int]] = list(Graph.edges())
+
+    for arete in liste_arete_init:
+
+        #Recuperation de la longueur de l'arete
+        longueur:float = Graph[arete[0]][arete[1]].get('longueur')
+
+        #Si elle fait plus de 10m, on divise l'arete
+        if longueur > 10:
+            Graph,position_sommet,droites = division_arete_trop_longue(Graph,position_sommet,droites,arete,longueur)
+
+def valuation_arete(graphe, droites:list, positions:dict) -> None:
     '''
-    :param graphe: nx.graph ; graphe des couloirs
-    :param droites: list ; liste des groupes d'alignement
-    :param positions: dict ; dictionnaire des sommets avec leur position
     Fonction qui calcul un poids pour chaque arete, le poids est definit en label dans le graphe
+
+    Args:
+        graphe (nx.graph): graphe des couloirs
+        droites (list): liste des droites du Graph
+        positions (dict): dictionnaire des sommets avec leur position
+    
     '''
 
     # on parcours les aretes une a une
@@ -160,15 +194,18 @@ def valuation_arete(graphe, droites:list, positions:dict):
 
         # on definit deux variables avec le sommet de depart et d'arrivee de l'arete
         sommet1, sommet2 = arete[0], arete[1]
+
         # on definit le poids de chaque arete a 0
         graphe[sommet1][sommet2]["poids"] = 0
 
-        # on parcours tous les groupes d'droites
+        # on parcours tous les droites 
         for droite in droites:
             # on regarde si l'arete est sur la droite
-            if str(sommet1) in droite and str(sommet2) in droite:
-                # on parcours tous les sommets du groupe pour voir si leur distance aux 2 points de l'arete leur permet de la couvrir entierement
+            if sommet1 in droite and sommet2 in droite:
+                # on parcours tous les sommets de la droite pour voir si leur distance par rapport au 2 points de l'arete leur permet de la couvrir entierement
                 for sommet in droite:
+                    sommet:str
+                    #Si c'est le cas :
                     if longueur_arete(positions, sommet, sommet1) <= 10 and longueur_arete(positions, sommet, sommet2) <= 10:
-                        # alors on rajoute +1 au poids de l'arete
+                        # alors on rajoute 1 au poids de l'arete
                         graphe[sommet1][sommet2]["poids"] += 1
