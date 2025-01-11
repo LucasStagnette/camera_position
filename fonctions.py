@@ -64,8 +64,9 @@ def longueur_arete(position_sommet:Dict[int,Tuple[float,float]],sommet_1,sommet_
     return longueur
 
 def division_arete_trop_longue(Graph:nx.Graph,position_sommet,alignements:List,arete,longueur):
+    sommet_a,sommet_b=arete[0],arete[1]
     #Suprresion de l'arete trop longue
-    Graph.remove_edge(arete[0],arete[1])
+    Graph.remove_edge(sommet_a,sommet_b)
 
     #Calcule du nombre de postion potentiel necessaire
     nb_points:int = int(longueur//10 - 1)
@@ -75,7 +76,7 @@ def division_arete_trop_longue(Graph:nx.Graph,position_sommet,alignements:List,a
     #On calcule l'ecartement nessecaire
     distance = longueur/(nb_points+1)
 
-    premier_sommet=arete[0]
+    premier_sommet=sommet_a
     liste_arrete=[]
 
 
@@ -93,8 +94,8 @@ def division_arete_trop_longue(Graph:nx.Graph,position_sommet,alignements:List,a
 
         
         #Calcul des positions
-        pos_x=((i+1)*(position_sommet[arete[1]][0]+position_sommet[arete[0]][0])/(nb_points+1))
-        pos_y=((i+1)*(position_sommet[arete[1]][1]+position_sommet[arete[0]][1])/(nb_points+1))
+        pos_x=((i+1)*(position_sommet[sommet_b][0]+position_sommet[sommet_a][0])/(nb_points+1))
+        pos_y=((i+1)*(position_sommet[sommet_b][1]+position_sommet[sommet_a][1])/(nb_points+1))
 
         #Ajout dans le dictionaire
         if not(i==nb_points):
@@ -106,7 +107,7 @@ def division_arete_trop_longue(Graph:nx.Graph,position_sommet,alignements:List,a
 
     #Ajout de la deuxieme arete qui manque
     #align_temp.append(deuxieme_sommet)
-    liste_arrete.append((deuxieme_sommet,arete[1],{'longueur':distance}))
+    liste_arrete.append((deuxieme_sommet,sommet_b,{'longueur':distance}))
     Graph.add_edges_from(liste_arrete)
     return Graph,position_sommet,alignements
 
