@@ -179,6 +179,7 @@ def traitement_graph(Graph:nx.Graph,position_sommet:Dict[int,Tuple[float,float]]
             Graph,position_sommet,droites = division_arete_trop_longue(Graph,position_sommet,droites,arete,longueur)
 
 def valuation_arete(graphe, droites:list, positions:dict) -> int,int:
+def valuation_arete(graphe, droites:list, positions:Dict[int,Tuple[float,float]]) -> int,int:
     '''
     Fonction qui calcul un poids pour chaque arete, le poids est definit en label dans le graphe
 
@@ -190,6 +191,7 @@ def valuation_arete(graphe, droites:list, positions:dict) -> int,int:
     '''
 
     # on parcours les aretes une a une
+   # on parcours les aretes une a une
     for arete in list(graphe.edges()):
 
         # on definit deux variables avec le sommet de depart et d'arrivee de l'arete
@@ -208,7 +210,6 @@ def valuation_arete(graphe, droites:list, positions:dict) -> int,int:
                     #Si c'est le cas :
                     if longueur_arete(positions, sommet, sommet1) <= 10 and longueur_arete(positions, sommet, sommet2) <= 10:
                         # alors on rajoute 1 au poids de l'arete
-                        graphe[sommet1][sommet2]["poids"] += 1
     #Determination des valeurs min et max
     v_min=99999
     v_max=0
@@ -242,3 +243,30 @@ def main():
 def affichage():
     pass
 
+def valutation_sommet():
+    pass
+
+def comparaison_sommet(G:nx.Graph,sommet_A:int,sommet_B:int) -> int:
+    """
+    Compare la liste des poid des arete adjancente a des sommet et renvoie celui qui a la valeur préféré
+    """
+    for i,k in G[sommet_A]['degree'],G[sommet_B]['degree']:
+        if i==k:
+            pass
+        elif i>k:
+            return sommet_A
+        elif k>i:
+            return sommet_B
+    return None
+
+def main():
+    pass
+
+def affichage(G:nx.Graph,pos:Dict[int,Tuple[float,float]],debug:bool=False):
+    nx.draw_networkx_nodes(G, pos, node_size=400)
+    nx.draw_networkx_edges(G, pos)
+    nx.draw_networkx_labels(G, pos)
+    if debug:
+        nx.draw_networkx_edge_labels(G, pos)
+    plt.show()
+    pass
