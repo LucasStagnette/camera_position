@@ -211,11 +211,18 @@ def valuation_arete(graphe, droites:list, positions:dict) -> None:
                         graphe[sommet1][sommet2]["poids"] += 1
 
 
-def valutation_sommet():
-    pass
+def valuation_sommet(sommet:int, graphe:nx.Graph, v_min:int, v_max:int):
+
+    graphe[sommet]["degree"] = [0 for i in range(v_min, v_max + 1)]
+    for i in graphe.neighbors(sommet):
+        graphe[sommet]["degree"][graphe[sommet][i]] += 1
+
+    return graphe[sommet].get("degree")
+
 def comparaison_sommet():
     pass
 def main():
     pass
-def affichage()
+def affichage():
     pass
+
