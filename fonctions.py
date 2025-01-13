@@ -229,13 +229,14 @@ def valuation_arete(graphe, droites:list, positions:Dict[int,Tuple[float,float]]
 
 
 def valuation_sommet(sommet:int, graphe:nx.Graph, v_min:int, v_max:int):
-    degrees = {}
-    graphe.nodes[sommet]["degree"] = [0 for i in range(v_min, v_max + 1)]
-    print(graphe.nodes[sommet]["degree"])
-    for i in graphe.neighbors(sommet):
-        graphe.nodes[sommet]["degree"][] += 1
 
-    return graphe[sommet].get("degree")
+    graphe.nodes[sommet]["degree"] = [0 for i in range(v_min, v_max + 1)]
+
+    for i in graphe.neighbors(sommet):
+
+        graphe.nodes[sommet]["degree"][int(graphe[sommet][i].get("poids"))-2] += 1
+
+    return graphe.nodes[sommet].get("degree")
 
 
 
