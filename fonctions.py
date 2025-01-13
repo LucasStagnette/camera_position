@@ -178,7 +178,7 @@ def traitement_graph(Graph:nx.Graph,position_sommet:Dict[int,Tuple[float,float]]
         if longueur > 10:
             Graph,position_sommet,droites = division_arete_trop_longue(Graph,position_sommet,droites,arete,longueur)
 
-def valuation_arete(graphe, droites:list, positions:Dict[int,Tuple[float,float]]) -> int,int:
+def valuation_arete(graphe, droites:list, positions:Dict[int,Tuple[float,float]]) -> Tuple[int,int]:
     '''
     Fonction qui calcul un poids pour chaque arete, le poids est definit en label dans le graphe
 
