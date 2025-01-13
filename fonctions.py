@@ -209,3 +209,13 @@ def valuation_arete(graphe, droites:list, positions:dict) -> None:
                     if longueur_arete(positions, sommet, sommet1) <= 10 and longueur_arete(positions, sommet, sommet2) <= 10:
                         # alors on rajoute 1 au poids de l'arete
                         graphe[sommet1][sommet2]["poids"] += 1
+
+
+def valutation_sommet():
+    pass
+def comparaison_sommet():
+    pass
+def main():
+    pass
+def affichage()
+    pass
