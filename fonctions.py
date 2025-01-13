@@ -236,9 +236,7 @@ def valuation_sommet(sommet:int, graphe:nx.Graph, v_min:int, v_max:int):
 
         graphe.nodes[sommet]["degree"][int(graphe[sommet][i].get("poids"))-2] += 1
 
-    return graphe.nodes[sommet].get("degree")
-
-
+    return graphe
 
 
 
@@ -246,14 +244,16 @@ def comparaison_sommet(G:nx.Graph,sommet_A:int,sommet_B:int) -> int:
     """
     Compare la liste des poid des arete adjancente a des sommet et renvoie celui qui a la valeur préféré
     """
-    for i,k in G[sommet_A]['degree'],G[sommet_B]['degree']:
-        if i==k:
+    for i in range(len(G.nodes[sommet_A].get("degree"))):
+        some1 = G.nodes[sommet_A].get("degree")[i]
+        some2 = G.nodes[sommet_B].get("degree")[i]
+        if some1 == some2:
             pass
-        elif i>k:
+        elif some1 > some2:
             return sommet_A
-        elif k>i:
+        elif some1 < some2:
             return sommet_B
-    return None
+    return sommet_A
 
 def main():
     pass
