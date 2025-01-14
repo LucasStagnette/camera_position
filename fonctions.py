@@ -222,6 +222,7 @@ def pretraitement_graph(
         positions_sommets:Dict[int,Tuple[float,float]],
         droites:Dict[int,Set[int]],
         associations_droites:Dict[int,Set[int]]) -> Tuple[
+            nx.Graph,
             int,
             int] :
     """
@@ -236,10 +237,12 @@ def pretraitement_graph(
         droites (List[Set[int]]): Liste des droites
 
     Returns:
+        nx.Graph: Graphe orignal
         int: poids minimum des aretes
         int: poids maximum des aretes
     """
-
+    #Copie du Graph a renvoye:
+    original=graphe.copy()
     #Parcour de toute les aretes du Graph
     for arete in graphe.edges():
 
@@ -298,7 +301,7 @@ def pretraitement_graph(
             #On change le min
             v_min = poids
 
-    return (v_min,v_max)
+    return (original,v_min,v_max)
 
 def valuation_sommet(
         graphe:nx.Graph,
@@ -465,7 +468,7 @@ def main(graphe:nx.Graph,
     graphe_affichage = graphe.copy()
 
     #Liste des Id de camera
-    id:List[int]=[0]
+    id:List[int]=[-1]
     #Position des camera
     pos_cam=[]
 
@@ -528,9 +531,7 @@ def placement_camera(
     for voisin in list(graphe_affichage.neighbors(sommet)):
         graphe_affichage.edges[(voisin,sommet)]["cam_id"] = id_cam
 
-
-
-def affichage(
+def affichage_debug(
         G:nx.Graph,
         pos:Dict[int,Tuple[float,float]]) -> None:
     """
@@ -543,14 +544,15 @@ def affichage(
     Returns:
         None
     """ 
-    nx.draw_networkx_edges(G, pos)
-    nx.draw_networkx_edge_labels(G, pos)
-    nx.draw_networkx_labels(G, pos)
-    nx.draw_networkx_nodes(G, pos, node_size=400)
+    nx.draw_networkx_edges(G, pos) #Affiche les aretes
+    nx.draw_networkx_edge_labels(G, pos) #Affcihes les labele des aretes
+    nx.draw_networkx_labels(G, pos) #Affiche les numero des sommet
+    nx.draw_networkx_nodes(G, pos, node_size=400) #Affiche les sommet
     plt.show()
 
 def affichage_final(
         G:nx.Graph,
+        O:nx.Graph,
         pos:Dict[int,Tuple[float,float]]) -> None:
     """
     Affiche le graphe dans une fentre pyplot
@@ -562,6 +564,7 @@ def affichage_final(
     Returns:
         None
     """
+    #Listes des couleurs a utilisé
     colors = [
     "red", "blue", "green", "orange", "purple", "pink", "yellow", "cyan",
     "magenta", "brown", "black", "white",  "lightblue", "lightgreen",
@@ -569,44 +572,27 @@ def affichage_final(
     "coral", "chocolate", "indigo", "violet", "orchid", "tan", "salmon",
     "khaki", "turquoise", "azure", "olive", "maroon"
     ]
-    for edge in G.edges:
-        G.edges[edge]['color']=colors[G.edges[edge]['cam']]
-    nx.draw_networkx_edges(G,pos,edge_color=colors) #Affiche les aretes
-    #nx.draw_networkx_edge_labels(G, pos) #Affcihes les labele des aretes
-    #nx.draw_networkx_labels(G, pos) #Affiche les numero des sommet
-    #nx.draw_networkx_nodes(G, pos, node_size=400) #Affiche les sommet
+
+    edge_colors = []
+    #Construis la liste des couleur en fonctions des cam_id
+    for u, v, data in G.edges(data=True):
+        edge_colors.append(colors[data.get('cam_id')])
+
+    node_cam = []
+    node_cam_col=[]
+    node_sans_cam =[]
+    for n,data in G.nodes(data=True):
+        if 'cam_id' in data:
+            node_cam_col.append(colors[data.get('cam_id')])
+            node_cam.append(n)
+        elif n in O.nodes:
+            node_sans_cam.append(n)
+
+    nx.draw_networkx_edges(G,pos,edge_color=edge_colors,width=5) 
+    nx.draw_networkx_nodes(G, pos,node_color='black',nodelist=node_sans_cam,node_size=100) #Affiche les intersection ou y a pas de cam
+    nx.draw_networkx_nodes(G, pos,node_color=node_cam_col,nodelist=node_cam,node_size=500,label=True) #Affiche les cameras
+    #for key,value in pos.items():
+    #    pos[key]=(value[0]-0.2,value[1]-0.15)  
+    #nx.draw_networkx_labels(O,pos)
     plt.grid()
     plt.show()
-
-def backup(
-        G:nx.Graph,
-        pos:Dict[int,Tuple[float,float]]) -> None:
-    """
-    Affiche le graphe dans une fentre pyplot
-
-    Args:
-        G (nx.Graph): Graphe a affichee
-        pos (Dict[int,Tuple[float,float]]): positions des sommets
-
-    Returns:
-        None
-    """
-    colors = [
-    "red", "blue", "green", "orange", "purple", "pink", "yellow", "cyan",
-    "magenta", "brown", "black", "white",  "lightblue", "lightgreen",
-    "darkred", "darkblue", "darkgreen", "gold", "teal", "lime", "navy",
-    "coral", "chocolate", "indigo", "violet", "orchid", "tan", "salmon",
-    "khaki", "turquoise", "azure", "olive", "maroon"
-    ]
-    def obtenir_couleur(data):
-        cam_id = data.get('cam_id', None)
-        return colors[cam_id] if cam_id is not None else "gray"
-
-    # Couleurs des nœuds
-    couleurs_noeuds = [obtenir_couleur(G.nodes[n]) for n in G.nodes]
-
-    # Couleurs des arêtes
-    couleurs_aretes = [obtenir_couleur(data) for _, _, data in G.edges(data=True)]
-    
-    nx.draw(G, pos, with_labels=True, node_color=couleurs_noeuds, edge_color=couleurs_aretes, node_size=500, width=2)
-        
