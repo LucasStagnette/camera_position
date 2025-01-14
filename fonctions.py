@@ -2,9 +2,10 @@ import networkx as nx
 import matplotlib.pyplot as plt
 
 from math import sqrt
+from random import randint
 from typing import List, Dict, Tuple, Set
 
-def lecture(fichier:str) -> Tuple[nx.Graph,Dict[int,Tuple[float,float]], List[Set[int]]]:
+def lecture(fichier:str) -> Tuple[nx.Graph,Dict[int,Tuple[float,float]],Dict[int,Set[int]],Dict[int,Set[int]]]:
     """
     Fonction qui lis les donnees d'un fichier et qui retourne le graphe, les positions et les droites
     Args:
@@ -16,7 +17,8 @@ def lecture(fichier:str) -> Tuple[nx.Graph,Dict[int,Tuple[float,float]], List[Se
     #Initalisation des variables vides
     G:nx.Graph = nx.Graph()
     positions:Dict[int,Tuple[float,float]] = {}
-    droites:List[Set[int]] = []
+    droites:Dict[int,Set[int]] = {}
+    assos_droites:Dict[int,Set[int]] = {}
 
     with open(fichier, "r") as file:
         # lecture du fichier et separation de la partie position et alignement dans 2 variables
@@ -29,8 +31,9 @@ def lecture(fichier:str) -> Tuple[nx.Graph,Dict[int,Tuple[float,float]], List[Se
         liste_points:List[str] = ligne.split(' ')
         positions[int(liste_points[0])] = (float(liste_points[1]), float(liste_points[2]))
 
-    # Recuperation des aretes du graph et sommets alignes
+    # Recuperation des aretes du graph et des droites
     aretes:List[List[str]] = []
+    cnt_drt=0
     for ligne in partie_alignements:
         #Ensemble des points sur la droite initialement vide
         droite = set()
@@ -38,14 +41,28 @@ def lecture(fichier:str) -> Tuple[nx.Graph,Dict[int,Tuple[float,float]], List[Se
         for arete in ligne.split(';'):
             aretes.append(arete.split()) #Recupere tout les aretes de la ligne
             droite.update({int(i) for i in arete.split()}) #Recupere tout les sommet de la ligne
-        droites.append(droite)  # Ajoute la droite à la liste des droites
+        #Ajouts des point sur la droite
+        droites[cnt_drt]=droite
+        cnt_drt+=1
 
     #Ajout des arete dans une liste et convertion des types
     edges:List[Tuple[int,int]] = [(int(i[0]),int(i[1])) for i in aretes]
-    #Ajout des arete dans le Graph
+
+    del cnt_drt,aretes
+
+    #Creation des set pour les associations
+    for sommet in positions.keys():
+        assos_droites[sommet]=set()
+    #Ajout des droites de chaque sommets
+    for nom,sommets in droites.items():
+        for sommet in sommets:
+            assos_droites[sommet].add(nom)
+
+    
+    #Ajout des arete dans le graphe
     G.add_edges_from(edges)
 
-    return (G,positions,droites)
+    return (G,positions,droites,assos_droites)
 
 def longueur_arete(position_sommet:Dict[int,Tuple[float,float]],sommet_1:int,sommet_2:int) -> float:
     """
@@ -69,12 +86,77 @@ def longueur_arete(position_sommet:Dict[int,Tuple[float,float]],sommet_1:int,som
     
     return longueur
 
-def division_arete_trop_longue(Graph:nx.Graph,position_sommet:Dict[int,Tuple[float,float]],droites:List[Set[int]],arete:Tuple[int,int],longueur:float) -> Tuple[nx.Graph,Dict[int,Tuple[float,float]], List[Set[int]]]:
+def cherche_droite(
+        associations_droites:Dict[int,Set[int]],
+        sommet_A:int,
+        sommet_B:int) -> int:
+    """
+    Reenvoie le nom de la droite commune a deux sommet
+    """
+    #Extractin des droite ou sont présent A et B
+    droites_A=associations_droites[sommet_A]
+    droites_B=associations_droites[sommet_B]
+
+    #Cherche et retourne la droite en commun
+    for i in droites_A:
+        for k in droites_B:
+            if k == i:
+                return k
+    return None
+
+def liste_voisin_eloignes(
+        position_sommet:Dict[int,Tuple[float,float]],
+        droites:Dict[int,Set[int]],
+        associations_droites:Dict[int,Set[int]],
+        sommet:int) -> List[int]:
+    """Renvoie la liste des voisin a la porté du sommet"""
+    R:list[List[int,int]]=list()
+    droites_du_sommet:set[int] = associations_droites[sommet]
+    for droite in droites_du_sommet:
+        R.append(list(droites[droite]))
+    #for voisin in Graph.neighbors(sommet):
+    #    R.remove(voisin)
+    to_rem=[]
+    for d in R:
+        d.remove(sommet)
+        for s in d:
+            if longueur_arete(position_sommet,s,sommet)>10:
+                d.remove(s)
+        if len(d)<2:
+            to_rem.append(d)
+    for i in to_rem:
+        R.remove(i)
+    return list(R)
+
+def aretes_sur_droite(
+        graphe:nx.Graph,
+        sommet:int,
+        sommets:List[int]  ) -> List[Tuple[int,int]]:
+    """Pour un sommet donné, renvoie la liste des arete qu'il peut couvrir mais qui ne sont pas ses voisine"""
+    R:List[Tuple[int,int]]=[]
+    for sommet1,sommet2 in graphe.edges():
+        for sommet in sommets:
+            if sommet1 in sommet and sommet2 in sommet:
+                R.append((sommet1,sommet2))
+    return R
+
+def division_arete_trop_longue(
+        graphe:nx.Graph,
+        position_sommet:Dict[int,Tuple[float,float]],
+        droites:Dict[int,Set[int]],
+        associations_droites:Dict[int,Set[int]],
+        arete:Tuple[int,int],
+        longueur:float) -> Tuple[
+            nx.Graph,
+            Dict[int,Tuple[float,float]],
+            Dict[int,Set[int]],
+            Dict[int,Set[int]]
+            ]:
     """
     Divise une arete de plus de 10m en sous aretes.
 
     Args:
-        Graph (nx.Graph): Graphe
+        graphe (nx.Graph): Graphe
         position_sommet (Dict[int,Tuple[float,float]]): Position des sommets
         droites (List[Set[int]]): Liste des droites
         arete (Tuple[int,int]): arete a divise
@@ -86,7 +168,7 @@ def division_arete_trop_longue(Graph:nx.Graph,position_sommet:Dict[int,Tuple[flo
     sommet_a,sommet_b = arete[0],arete[1]
     
     #Suprresion de l'arete trop longue
-    Graph.remove_edge(sommet_a,sommet_b)
+    graphe.remove_edge(sommet_a,sommet_b)
 
     #Calcule du nombre de postion potentiel necessaire
     nb_points:int = int(longueur//10 - 1)
@@ -107,7 +189,7 @@ def division_arete_trop_longue(Graph:nx.Graph,position_sommet:Dict[int,Tuple[flo
     for i in range(nb_points):
 
         #Preparation sommets intermediaire : Determiner le nom d nouveau sommet
-        liste_sommet_prexistant: list[int] = sorted([int(i) for i in list(Graph.nodes())])
+        liste_sommet_prexistant: list[int] = sorted([int(i) for i in list(graphe.nodes())])
 
         #Nom du nouveau sommet :
         deuxieme_sommet:int = liste_sommet_prexistant[-1]+1
@@ -132,24 +214,32 @@ def division_arete_trop_longue(Graph:nx.Graph,position_sommet:Dict[int,Tuple[flo
     #Ajout de la derniere arete dans la liste des nouvelle aretes
     arete_temp.append((deuxieme_sommet,sommet_b,{'longueur':distance}))
     
-    #Ajout des nouvelle arete dans le Graph
-    Graph.add_edges_from(arete_temp)
+    #Ajout des nouvelle arete dans le graphe
+    graphe.add_edges_from(arete_temp)
 
     #Ajout des nouveau sommet sur la droite
-    for droite in droites:
-        # on regarde si l'arete est sur la droite
-        if sommet_a in droite and sommet_b in droite:
-            droites[droites.index(droite)].update(i for i in align_temp)
+    droite_originel=cherche_droite(associations_droites,sommet_a,sommet_b)
+    droites[droite_originel].update(align_temp)
 
-    return Graph,position_sommet,droites
+    #Creation des set pour les associations
+    for sommet in align_temp:
+        associations_droites[sommet]=set()
+        associations_droites[sommet].add(droite_originel)
 
-def traitement_graph(Graph:nx.Graph,position_sommet:Dict[int,Tuple[float,float]],droites:List[Set[int]]) -> None :
+    return graphe,position_sommet,droites,associations_droites
+
+def pretraitement_graph(
+        graphe:nx.Graph,
+        position_sommet:Dict[int,Tuple[float,float]],
+        droites:Dict[int,Set[int]],
+        associations_droites:Dict[int,Set[int]]) -> Tuple[int,int] :
     """
     Cette fonction prend en entré un graph et la postion de ces sommets,
-    et retourne un graphe avec pour chaque arête la longueur de celle si, si elle fait plus de 10m l'arete est divisé en plus petit segment
+    Si une arete fait plus de 10m l'arete est divisé en sous aretes
+    et retourne un graphe avec pour chaque arête sa longueur et son poid. 
     
     Args:
-        Graphe (nx.Graph): Graphe des couloir
+        graphe (nx.Graph): Graphe des couloir
         position_sommet (Dict[str:Tuple[str,str]): Coordonnees des sommets
         droites (List[Set[int]]): Liste des droites
 
@@ -158,39 +248,28 @@ def traitement_graph(Graph:nx.Graph,position_sommet:Dict[int,Tuple[float,float]]
     """
 
     #Parcour de toute les aretes du Graph
-    for arete in Graph.edges():
+    for arete in graphe.edges():
 
         #Calcule de sa longueur
         longueur:float = longueur_arete(position_sommet,arete[0],arete[1])
 
         #Ajout du label longueur
-        Graph[arete[0]][arete[1]]['longueur']=longueur
-        
+        graphe[arete[0]][arete[1]]['longueur']=longueur
+
+               
     #Extraction de la liste des aretes 
-    liste_arete_init:List[Tuple[int,int]] = list(Graph.edges())
+    liste_arete_init:List[Tuple[int,int]] = list(graphe.edges())
 
     for arete in liste_arete_init:
 
         #Recuperation de la longueur de l'arete
-        longueur:float = Graph[arete[0]][arete[1]].get('longueur')
+        longueur:float = graphe[arete[0]][arete[1]].get('longueur')
 
         #Si elle fait plus de 10m, on divise l'arete
         if longueur > 10:
-            Graph,position_sommet,droites = division_arete_trop_longue(Graph,position_sommet,droites,arete,longueur)
+            graphe,position_sommet,droites,associations_droites = division_arete_trop_longue(graphe,position_sommet,droites,associations_droites,arete,longueur)
 
-def valuation_arete(graphe, droites:list, positions:Dict[int,Tuple[float,float]]) -> Tuple[int,int]:
-    '''
-    Fonction qui calcul un poids pour chaque arete, le poids est definit en label dans le graphe
-
-    Args:
-        graphe (nx.graph): graphe des couloirs
-        droites (list): liste des droites du Graph
-        positions (dict): dictionnaire des sommets avec leur position
-    
-    '''
-   # on parcours les aretes une a une
     for arete in list(graphe.edges()):
-
         # on definit deux variables avec le sommet de depart et d'arrivee de l'arete
         sommet1, sommet2 = arete[0], arete[1]
 
@@ -198,17 +277,17 @@ def valuation_arete(graphe, droites:list, positions:Dict[int,Tuple[float,float]]
         graphe[sommet1][sommet2]["poids"] = 0
 
         # on parcours tous les droites 
-        for droite in droites:
+        for droite in droites.values():
             # on regarde si l'arete est sur la droite
             if sommet1 in droite and sommet2 in droite:
                 # on parcours tous les sommets de la droite pour voir si leur distance par rapport au 2 points de l'arete leur permet de la couvrir entierement
                 for sommet in droite:
                     sommet:str
                     #Si c'est le cas :
-                    if longueur_arete(positions, sommet, sommet1) <= 10 and longueur_arete(positions, sommet, sommet2) <= 10:
+                    if longueur_arete(position_sommet, sommet, sommet1) <= 10 and longueur_arete(position_sommet, sommet, sommet2) <= 10:
                         # alors on rajoute 1 au poids de l'arete
-                        graphe[sommet1][sommet2]["poids"] += 1                        
-    
+                        graphe[sommet1][sommet2]["poids"] += 1
+
     #Determination des valeurs min et max
     v_min=99999
     v_max=0
@@ -226,27 +305,33 @@ def valuation_arete(graphe, droites:list, positions:Dict[int,Tuple[float,float]]
 
     return (v_min,v_max)
 
+def valuation_sommet(graphe:nx.Graph,
+        aretes_voisines_indirect,
+        sommet:int,
+        v_min:int,
+        v_max:int):
+    
+    #Initialisation des liste vide pour l'aret
+    graphe.nodes[sommet]["portee"] = [0 for i in range(v_min, 2*v_max)]
+    
+    for voisins in graphe.neighbors(sommet):
+        #met la valeur du degree      recupere le poids de l'arete soustrait 2 et ajoute 1 au degree
 
+        graphe.nodes[sommet]["portee"][int(graphe[sommet][voisins].get("poids"))-2] += 1
 
-def valuation_sommet(sommet:int, graphe:nx.Graph, v_min:int, v_max:int):
-
-    graphe.nodes[sommet]["degree"] = [0 for i in range(v_min, v_max + 1)]
-
-    for i in graphe.neighbors(sommet):
-
-        graphe.nodes[sommet]["degree"][int(graphe[sommet][i].get("poids"))-2] += 1
+    for arete in aretes_voisines_indirect:
+        graphe.nodes[sommet]["portee"][int(graphe[arete[0]][arete[1]].get("poids"))] += 1
 
     return graphe
-
 
 
 def comparaison_sommet(G:nx.Graph,sommet_A:int,sommet_B:int) -> int:
     """
     Compare la liste des poid des arete adjancente a des sommet et renvoie celui qui a la valeur préféré
     """
-    for i in range(len(G.nodes[sommet_A].get("degree"))):
-        some1 = G.nodes[sommet_A].get("degree")[i]
-        some2 = G.nodes[sommet_B].get("degree")[i]
+    for i in range(len(G.nodes[sommet_A].get("portee"))):
+        some1 = G.nodes[sommet_A].get("portee")[i]
+        some2 = G.nodes[sommet_B].get("portee")[i]
         if some1 == some2:
             pass
         elif some1 > some2:
@@ -255,14 +340,71 @@ def comparaison_sommet(G:nx.Graph,sommet_A:int,sommet_B:int) -> int:
             return sommet_B
     return sommet_A
 
-def main():
-    pass
+def main(graphe:nx.Graph,
+        positions:Dict[int,Tuple[float,float]],
+        droites:Dict[int,Set[int]],
+        associations_droites:Dict[int,Set[int]],
+        v_min:int,
+        v_max:int):
+    graphe_affichage = graphe.copy()
+    id=[0]
+    while list(graphe.edges()):
+        dict_aretes_voisines_indirect={}
+        for sommet in graphe.nodes():
+            voisins_indirect = liste_voisin_eloignes(positions,droites,associations_droites,sommet)
+            dict_aretes_voisines_indirect[sommet] = aretes_sur_droite(graphe,sommet,voisins_indirect)
+            valuation_sommet(graphe,dict_aretes_voisines_indirect[sommet],sommet,v_min,v_max)
+        best = list(graphe.nodes())[0]
 
-def affichage(G:nx.Graph,pos:Dict[int,Tuple[float,float]],debug:bool=False):
-    nx.draw_networkx_nodes(G, pos, node_size=400)
+        for sommet in graphe.nodes():
+            
+            best = comparaison_sommet(graphe,best,sommet)
+
+        id.append(id[-1]+1)
+        #print(best)
+        placement_camera(graphe,graphe_affichage,best,dict_aretes_voisines_indirect[best],id[-1])
+
+    return graphe_affichage
+        
+
+def placement_camera(graphe:nx.Graph,graphe_affichage:nx.Graph,sommet:int,aretes_voisines_indirect,id_cam:int):
+    graphe.remove_node(sommet)
+    graphe.remove_edges_from(aretes_voisines_indirect)
+
+    graphe_affichage.nodes[sommet]["cam_id"] = id_cam
+    for arete in aretes_voisines_indirect:
+        if not "cam_id" in graphe_affichage.edges[arete]:
+            graphe_affichage.edges[arete]["cam_id"] = id_cam
+    for voisin in list(graphe_affichage.neighbors(sommet)):
+        graphe_affichage.edges[(voisin,sommet)]["cam_id"] = id_cam
+
+
+
+def affichage(G:nx.Graph,pos:Dict[int,Tuple[float,float]],debug:bool=False,color=True):
     nx.draw_networkx_edges(G, pos)
-    nx.draw_networkx_labels(G, pos)
+    if color:
+        colors = [
+        "red", "blue", "green", "orange", "purple", "pink", "yellow", "cyan",
+        "magenta", "brown", "black", "white",  "lightblue", "lightgreen",
+        "darkred", "darkblue", "darkgreen", "gold", "teal", "lime", "navy",
+        "coral", "chocolate", "indigo", "violet", "orchid", "tan", "salmon",
+        "khaki", "turquoise", "azure", "olive", "maroon"
+        ]
+        def obtenir_couleur(data):
+            cam_id = data.get('cam_id', None)
+            return colors[cam_id % len(colors)] if cam_id is not None else "gray"
+
+        # Couleurs des nœuds
+        couleurs_noeuds = [obtenir_couleur(G.nodes[n]) for n in G.nodes]
+
+        # Couleurs des arêtes
+        couleurs_aretes = [obtenir_couleur(data) for _, _, data in G.edges(data=True)]
+        
+        nx.draw(G, pos, with_labels=True, node_color=couleurs_noeuds, edge_color=couleurs_aretes, node_size=500, width=2)
+
     if debug:
         nx.draw_networkx_edge_labels(G, pos)
+        nx.draw_networkx_labels(G, pos)
+        nx.draw_networkx_nodes(G, pos, node_size=400)
     plt.show()
     pass
