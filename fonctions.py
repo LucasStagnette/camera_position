@@ -5,6 +5,7 @@ from math import sqrt
 from random import randint
 from typing import List, Dict, Tuple, Set
 
+
 def lecture(
     fichier:str) -> Tuple[
         nx.Graph,
@@ -305,7 +306,7 @@ def pretraitement_graph(
 
 def valuation_sommet(
         graphe:nx.Graph,
-        aretes_voisines_indirect:list[tuple[int, int]],
+        aretes_voisines_indirect:List[Tuple[int, int]],
         sommet:int,
         v_min:int,
         v_max:int) -> None:
@@ -500,7 +501,7 @@ def placement_camera(
         graphe:nx.Graph,
         graphe_affichage:nx.Graph,
         sommet:int,
-        aretes_voisines_indirect:list[tuple[int, int]],
+        aretes_voisines_indirect:List[Tuple[int, int]],
         id_cam:int) ->None :
     """
     Place officielement une camera sur un sommet. Modifie difrectement les graphes
