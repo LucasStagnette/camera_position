@@ -1,6 +1,5 @@
 import networkx as nx
 import matplotlib.pyplot as plt
-
 from math import sqrt
 from random import randint
 from typing import List, Dict, Tuple, Set
@@ -545,11 +544,13 @@ def affichage_simple(
     Returns:
         None
     """
+
+
     nx.draw_networkx_edges(G,pos,width=5) #Affiches les aretes colore
     nx.draw_networkx_nodes(G, pos,node_color='black',node_size=250) #Affiche les intersection ou y a pas de cam
     nx.draw_networkx_labels(G, pos,font_color="white",font_size=10) #Affiche le numero des sommet original
     plt.grid()
-
+    plt.show()
 
 def affichage_debug(
         G:nx.Graph,
@@ -594,6 +595,7 @@ def affichage_final(
     "khaki", "turquoise", "azure", "olive", "maroon"
     ]
 
+
     edge_colors = []
     #Construis la liste des couleur en fonctions des cam_id
     for u, v, data in G.edges(data=True):
@@ -617,3 +619,5 @@ def affichage_final(
     #Repositionne les label pour que il soit au millieux de la case
     nx.draw_networkx_labels(O, pos,font_color="white",font_size=10) #Affiche le numero des sommet original
     plt.grid()
+    plt.show()
+
