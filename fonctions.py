@@ -532,6 +532,25 @@ def placement_camera(
     for voisin in list(graphe_affichage.neighbors(sommet)):
         graphe_affichage.edges[(voisin,sommet)]["cam_id"] = id_cam
 
+def affichage_simple(
+        G:nx.Graph,
+        pos:Dict[int,Tuple[float,float]]) -> None:
+    """
+    Affiche le graphe dans une fentre pyplot
+
+    Args:
+        G (nx.Graph): Graphe a affichee
+        pos (Dict[int,Tuple[float,float]]): positions des sommets
+
+    Returns:
+        None
+    """
+    nx.draw_networkx_edges(G,pos,width=5) #Affiches les aretes colore
+    nx.draw_networkx_nodes(G, pos,node_color='black',node_size=250) #Affiche les intersection ou y a pas de cam
+    nx.draw_networkx_labels(G, pos,font_color="white",font_size=10) #Affiche le numero des sommet original
+    plt.grid()
+
+
 def affichage_debug(
         G:nx.Graph,
         pos:Dict[int,Tuple[float,float]]) -> None:
@@ -560,6 +579,7 @@ def affichage_final(
 
     Args:
         G (nx.Graph): Graphe a affichee
+        O (nx.Graph): Graphe a initiale sans sommet rajouter
         pos (Dict[int,Tuple[float,float]]): positions des sommets
 
     Returns:
@@ -579,9 +599,11 @@ def affichage_final(
     for u, v, data in G.edges(data=True):
         edge_colors.append(colors[data.get('cam_id')])
 
-    node_cam = []
-    node_cam_col=[]
-    node_sans_cam =[]
+    node_cam = [] #Noeud ou il y a des camera
+    node_cam_col=[] #Couleur des Noeud avec des camera
+    node_sans_cam =[] #Noeud sans camera
+
+    #Pour chaque noeud on trie si il a une camera ou non (sans tenir compte des noeud rajouter sur les couloir trop long)
     for n,data in G.nodes(data=True):
         if 'cam_id' in data:
             node_cam_col.append(colors[data.get('cam_id')])
@@ -589,11 +611,9 @@ def affichage_final(
         elif n in O.nodes:
             node_sans_cam.append(n)
 
-    nx.draw_networkx_edges(G,pos,edge_color=edge_colors,width=5) 
-    nx.draw_networkx_nodes(G, pos,node_color='black',nodelist=node_sans_cam,node_size=100) #Affiche les intersection ou y a pas de cam
-    nx.draw_networkx_nodes(G, pos,node_color=node_cam_col,nodelist=node_cam,node_size=500,label=True) #Affiche les cameras
-    #for key,value in pos.items():
-    #    pos[key]=(value[0]-0.2,value[1]-0.15)  
-    #nx.draw_networkx_labels(O,pos)
+    nx.draw_networkx_edges(G,pos,edge_color=edge_colors,width=5) #Affiches les aretes colore
+    nx.draw_networkx_nodes(G, pos,node_color='black',nodelist=node_sans_cam,node_size=250) #Affiche les intersection ou y a pas de cam
+    nx.draw_networkx_nodes(G, pos,node_color=node_cam_col,nodelist=node_cam,node_size=500) #Affiche les cameras
+    #Repositionne les label pour que il soit au millieux de la case
+    nx.draw_networkx_labels(O, pos,font_color="white",font_size=10) #Affiche le numero des sommet original
     plt.grid()
-    plt.show()
