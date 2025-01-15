@@ -71,7 +71,7 @@ def affichage_simple(G: nx.Graph, pos: Dict[int, Tuple[float, float]], frame: tk
     nx.draw_networkx_labels(G, pos,font_color="white",font_size=10) #Affiche le numero des sommet original
     #ax.set_facecolor('#F598C3')
     fig.patch.set_facecolor('#F598C3')
-    plt.grid()
+    grille_affichage(pos)
 
     # Créer un canvas pour insérer la figure dans tkinter
     canvas = FigureCanvasTkAgg(fig, master=frame)
@@ -133,7 +133,7 @@ def affichage_final(G:nx.Graph, O:nx.Graph, pos:Dict[int,Tuple[float,float]], fr
     #Repositionne les label pour que il soit au millieux de la case
     nx.draw_networkx_labels(O, pos,font_color="white",font_size=10) #Affiche le numero des sommet original
     fig.patch.set_facecolor('#F598C3')
-    plt.grid()
+    grille_affichage(pos)
 
     # Créer un canvas pour insérer la figure dans tkinter
     canvas = FigureCanvasTkAgg(fig, master=frame)
@@ -150,7 +150,7 @@ def undo():
         canvas_widget.destroy()
         G, pos, droites, assos = lecture(fichier)
         e, v_min, v_max = pretraitement_graph(G, pos, droites, assos)
-        affichage_simple(G, pos, frame_affichage)
+        affichage_simple(e, pos, frame_affichage)
         cameras_var.set(f"Nombre de caméras : 0")
         a = True
 

@@ -1,4 +1,5 @@
 import networkx as nx
+import numpy as np
 import matplotlib.pyplot as plt
 from math import sqrt
 from random import randint
@@ -178,14 +179,13 @@ def division_arete_trop_longue(
     pos_x_A = positions_sommets[sommet_A][0]
     pos_y_A = positions_sommets[sommet_A][1]
     #On doit cree nb+1 aretes
-    for i in range(0,nb_points+1):
+    for i in range(1,nb_points+1):
 
         #Preparation sommets intermediaire : Determiner le nom d nouveau sommet
         liste_sommet_prexistant: list[int] = sorted([int(i) for i in list(graphe.nodes())])
 
         #Nom du nouveau sommet :
         deuxieme_sommet:int = liste_sommet_prexistant[-1]+1
-
         #Calcul de sa positions
         pos_x = pos_x_A + i * vecteur[0]/(nb_points+1)
         pos_y = pos_y_A + i * vecteur[1]/(nb_points+1)
@@ -337,9 +337,9 @@ def valuation_sommet(
         graphe.nodes[sommet]["portee"][int(graphe[sommet][voisins].get("poids"))-2] += 1
 
     #Pour chaque arete a la portee du sommet
-    for arete in aretes_voisines_indirect:
-        #On comptabilise le poid de cette arete dans la portee du sommet
-        graphe.nodes[sommet]["portee"][int(graphe[arete[0]][arete[1]].get("poids"))] += 1
+    #for arete in aretes_voisines_indirect:
+    #    #On comptabilise le poid de cette arete dans la portee du sommet
+    #    graphe.nodes[sommet]["portee"][int(graphe[arete[0]][arete[1]].get("poids"))] += 1
 
 def comparaison_sommet(graphe:nx.Graph,sommet_A:int,sommet_B:int) -> int:
     """
@@ -537,6 +537,24 @@ def placement_camera(
     for voisin in list(graphe_affichage.neighbors(sommet)):
         graphe_affichage.edges[(voisin,sommet)]["cam_id"] = id_cam
 
+def grille_affichage(pos:Dict[int,Tuple[float,float]]):
+    # Obtenir les limites des positions des nœuds
+    x_values, y_values = zip(*pos.values())
+    x_min, x_max = np.floor(min(x_values)), np.ceil(max(x_values))
+    y_min, y_max = np.floor(min(y_values)), np.ceil(max(y_values))
+
+    # Définir les limites des axes pour aligner avec la grille
+    plt.xlim(x_min - 1, x_max + 1)  # Ajout d'une marge
+    plt.ylim(y_min - 1, y_max + 1)  # Ajout d'une marge
+
+    # Configurer la grille pour une unité par case
+    plt.xticks(np.arange(x_min - 1, x_max + 2, 1))  # Ticks tous les 1 sur x
+    plt.yticks(np.arange(y_min - 1, y_max + 2, 1))  # Ticks tous les 1 sur y
+    plt.grid(visible=True, which='both', color='gray', linestyle='--', linewidth=0.5)
+
+    # Fixer l'aspect des axes pour que 1 unité sur x = 1 unité sur y
+    plt.gca().set_aspect('equal', adjustable='box')
+
 def affichage_simple(
         G:nx.Graph,
         pos:Dict[int,Tuple[float,float]]) -> None:
@@ -555,7 +573,7 @@ def affichage_simple(
     nx.draw_networkx_edges(G,pos,width=5) #Affiches les aretes colore
     nx.draw_networkx_nodes(G, pos,node_color='black',node_size=250) #Affiche les intersection ou y a pas de cam
     nx.draw_networkx_labels(G, pos,font_color="white",font_size=10) #Affiche le numero des sommet original
-    plt.grid()
+    grille_affichage(pos)
     plt.show()
 
 def affichage_debug(
@@ -575,6 +593,7 @@ def affichage_debug(
     nx.draw_networkx_edge_labels(G, pos) #Affcihes les labele des aretes
     nx.draw_networkx_labels(G, pos) #Affiche les numero des sommet
     nx.draw_networkx_nodes(G, pos, node_size=400) #Affiche les sommet
+    #grille_affichage(pos)
     plt.show()
 
 def affichage_final(
@@ -622,8 +641,9 @@ def affichage_final(
     nx.draw_networkx_edges(G,pos,edge_color=edge_colors,width=5) #Affiches les aretes colore
     nx.draw_networkx_nodes(G, pos,node_color='black',nodelist=node_sans_cam,node_size=250) #Affiche les intersection ou y a pas de cam
     nx.draw_networkx_nodes(G, pos,node_color=node_cam_col,nodelist=node_cam,node_size=500) #Affiche les cameras
-    #Repositionne les label pour que il soit au millieux de la case
+
     nx.draw_networkx_labels(O, pos,font_color="white",font_size=10) #Affiche le numero des sommet original
-    plt.grid()
+
+    grille_affichage(pos)
     plt.show()
 
