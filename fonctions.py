@@ -174,8 +174,11 @@ def division_arete_trop_longue(
     #Liste temporaire des nouveau sommet a rajouter sur la droite
     align_temp = []
 
+    vecteur:Tuple[float,float] = (positions_sommets[sommet_B][0]-positions_sommets[sommet_A][0],positions_sommets[sommet_B][1]-positions_sommets[sommet_A][1])
+    pos_x_A = positions_sommets[sommet_A][0]
+    pos_y_A = positions_sommets[sommet_A][1]
     #On doit cree nb+1 aretes
-    for i in range(nb_points):
+    for i in range(0,nb_points+1):
 
         #Preparation sommets intermediaire : Determiner le nom d nouveau sommet
         liste_sommet_prexistant: list[int] = sorted([int(i) for i in list(graphe.nodes())])
@@ -184,8 +187,8 @@ def division_arete_trop_longue(
         deuxieme_sommet:int = liste_sommet_prexistant[-1]+1
 
         #Calcul de sa positions
-        pos_x=(positions_sommets[sommet_A][0]+(i/(nb_points+1))*((positions_sommets[sommet_B][0]-positions_sommets[sommet_A][0])))
-        pos_y=(positions_sommets[sommet_A][1]+(i/(nb_points+1))*((positions_sommets[sommet_B][1]-positions_sommets[sommet_A][1])))
+        pos_x = pos_x_A + i * vecteur[0]/(nb_points+1)
+        pos_y = pos_y_A + i * vecteur[1]/(nb_points+1)
         
         #Ajout du nouveau sommet dans la liste des nouveaux sommets alignes
         align_temp.append(deuxieme_sommet)
@@ -303,7 +306,7 @@ def pretraitement_graph(
         elif poids < v_min:
             #On change le min
             v_min = poids
-    return (graphe,original,positions_sommets,droites,associations_droites,v_min,v_max)
+    return (original,v_min,v_max)
 
 def valuation_sommet(
         graphe:nx.Graph,
