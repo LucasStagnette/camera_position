@@ -184,19 +184,22 @@ def division_arete_trop_longue(
         deuxieme_sommet:int = liste_sommet_prexistant[-1]+1
 
         #Calcul de sa positions
-        pos_x=((i+1)*(positions_sommets[sommet_B][0]+positions_sommets[sommet_A][0])/(nb_points+1))
-        pos_y=((i+1)*(positions_sommets[sommet_B][1]+positions_sommets[sommet_A][1])/(nb_points+1))
-
+        pos_x=(positions_sommets[sommet_A][0]+(i/(nb_points+1))*((positions_sommets[sommet_B][0]-positions_sommets[sommet_A][0])))
+        pos_y=(positions_sommets[sommet_A][1]+(i/(nb_points+1))*((positions_sommets[sommet_B][1]-positions_sommets[sommet_A][1])))
+        
         #Ajout du nouveau sommet dans la liste des nouveaux sommets alignes
         align_temp.append(deuxieme_sommet)
 
         #Ajout du nouveau sommet dans le dictionaire des position
-        if not(i==nb_points):
-            positions_sommets[deuxieme_sommet]=(pos_x,pos_y)
+        #if not(i==nb_points):
+        positions_sommets[deuxieme_sommet]=(pos_x,pos_y)
 
         #Ajout de la nouvelle arete dans la liste des nouvelle aretes
         arete_temp.append((premier_sommet,deuxieme_sommet,{'longueur':distance}))
         
+        #Ajout du nouveau sommet dans le graphe.
+        graphe.add_node(deuxieme_sommet)
+
         #Changement du premier sommet pour calculer la prochaine arete
         premier_sommet = deuxieme_sommet
     
@@ -265,7 +268,7 @@ def pretraitement_graph(
         #Si elle fait plus de 10m, on divise l'arete
         if longueur > 10:
             graphe,positions_sommets,droites,associations_droites = division_arete_trop_longue(graphe,positions_sommets,droites,associations_droites,arete,longueur)
-
+    
     #Calcul des poids
     for arete in list(graphe.edges()):
         # on definit deux variables avec le sommet de depart et d'arrivee de l'arete
@@ -300,8 +303,7 @@ def pretraitement_graph(
         elif poids < v_min:
             #On change le min
             v_min = poids
-
-    return (original,v_min,v_max)
+    return (graphe,original,positions_sommets,droites,associations_droites,v_min,v_max)
 
 def valuation_sommet(
         graphe:nx.Graph,
@@ -442,7 +444,8 @@ def aretes_sur_droite(
 
     return Resultat
 
-def main(graphe:nx.Graph,
+def main(
+        graphe:nx.Graph,
         positions:Dict[int,Tuple[float,float]],
         droites:Dict[int,Set[int]],
         associations_droites:Dict[int,Set[int]],
