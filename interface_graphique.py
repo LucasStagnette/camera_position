@@ -46,7 +46,6 @@ def resolution():
         canvas_widget.destroy()
         affichage_final(Graphe_final, O, pos, frame_affichage)
         cameras_var.set(f"Nombre de caméras : {nb_cameras}")
-        print(nb_cameras)
 
 # exporter l'image du graphe actuel
 def exporter_fichier():
