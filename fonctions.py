@@ -2,7 +2,6 @@ import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
 from math import sqrt
-from random import randint
 from typing import List, Dict, Tuple, Set
 
 
@@ -535,7 +534,8 @@ def placement_camera(
 
     # puis dirctement connecter au sommet
     for voisin in list(graphe_affichage.neighbors(sommet)):
-        graphe_affichage.edges[(voisin,sommet)]["cam_id"] = id_cam
+        if not "cam_id" in graphe_affichage.edges[(voisin,sommet)]:
+            graphe_affichage.edges[(voisin,sommet)]["cam_id"] = id_cam
 
 def grille_affichage(pos:Dict[int,Tuple[float,float]]):
     # Obtenir les limites des positions des nœuds
