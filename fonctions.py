@@ -336,9 +336,9 @@ def valuation_sommet(
         graphe.nodes[sommet]["portee"][int(graphe[sommet][voisins].get("poids"))-2] += 1
 
     #Pour chaque arete a la portee du sommet
-    #for arete in aretes_voisines_indirect:
-    #    #On comptabilise le poid de cette arete dans la portee du sommet
-    #    graphe.nodes[sommet]["portee"][int(graphe[arete[0]][arete[1]].get("poids"))] += 1
+    for arete in aretes_voisines_indirect:
+        #On comptabilise le poid de cette arete dans la portee du sommet
+        graphe.nodes[sommet]["portee"][int(graphe[arete[0]][arete[1]].get("poids"))] += 1
 
 def comparaison_sommet(graphe:nx.Graph,sommet_A:int,sommet_B:int) -> int:
     """
@@ -346,7 +346,6 @@ def comparaison_sommet(graphe:nx.Graph,sommet_A:int,sommet_B:int) -> int:
 
     Args:
         graphe (nx.Graph): graphe
-        aretes_voisines_indirect(list[tuple[int, int]]): Liste des arete que le sommet peut couvrir mais pas directement accessible
         v_min (int): poids minimum des aretes
         v_max (int): poids maximum des aretes
 
@@ -368,83 +367,46 @@ def comparaison_sommet(graphe:nx.Graph,sommet_A:int,sommet_B:int) -> int:
         
     return sommet_A
 
-def liste_voisin_eloignes(
+def arete_a_porte_indirect(
+        graphe:nx.Graph,
         positions_sommets:Dict[int,Tuple[float,float]],
         droites:Dict[int,Set[int]],
         associations_droites:Dict[int,Set[int]],
-        sommet:int) -> List[List[int]]:
+        sommet:int) -> List[Tuple[int,int]]:
     """
-    Renvoie la liste des voisin a la porte du sommet
-    
-    Args:
-        positions_sommets (Dict[int,Tuple[float,float]]): Position des sommets
-        droites (List[Set[int]]): Liste des droites
-        sommet (Tuple[int,int]): sommet a considere
-
-    Returns:
-        List[List[int]]
-    """
-    Resultat:List[List[int]]=[]
-
-    #Droites auxquel le sommet appartient
-    droites_du_sommet:set[int] = associations_droites[sommet]
-
-    #Pour chaqu'une de ces droites
-    for droite in droites_du_sommet:
-        #On recupere tout les elements de cette droite
-        Resultat.append(list(droites[droite]))
-        
-    #Liste temporaire des sommets a retirer
-    to_rem=[]
-    #Pour chaque droite deja presente dans le resultat
-    for d in Resultat:
-        #On retire le sommet en question
-        d.remove(sommet)
-        #Pour chaque sommet sur cette droite
-        for s in d:
-            #Si la longeur entre sommet et s est de plus de 10 m
-            if longueur_arete(positions_sommets,s,sommet)>10:
-                #On enleve se sommet
-                d.remove(s)
-        #Si la droite a moin de 2 element, il y a pas d'arete que le sommet peut couvir
-        if len(d)<2:
-            #On suprime cette droite
-            to_rem.append(d)
-
-    #Supression des dit element
-    for i in to_rem:
-        Resultat.remove(i)
-        
-    return list(Resultat)
-
-def aretes_sur_droite(
-        graphe:nx.Graph,
-        sommet:int,
-        sommets:List[List[int]]  ) -> List[Tuple[int,int]]:
-    """
-    Pour un sommet donne, renvoie la liste des arete qu'il peut couvrir mais qui ne sont pas ses voisine
+    Cette fonction retourne la liste des aretes qui ne sont pas directement connecter a un sommet, mais qui seront couverte si on place une camera sur celui si
     
     Args:
         graphe (nx.Graph): Graphe
-        sommet (int): Sommet a considere
-        sommets (Tuple[int,int]): Liste des solet
+        positions_sommets (Dict[int,Tuple[float,float]]): Position des sommets
+        droites (List[Set[int]]): Dictionaire des droite
+        associations_droites (Tuple[int,int]): Dictionaire des associations des droite
+        sommet (float): sommet à considere
 
     Returns:
-        List[Tuple[int,int]]: Liste des aretes a portee du sommet
+        List[Tuple[int,int]]: Liste des aretes
     
     """
-    #On initialise la liste resultat vide
-    Resultat:List[Tuple[int,int]]=[]
-    #Pour chaque arete
-    for sommet1,sommet2 in graphe.edges():
-        #Pour chaque lot de sommet dans la liste sommet atteignable
-        for sommet in sommets:
-            #si il y a une arete qui est comprise dans se lot
-            if sommet1 in sommet and sommet2 in sommet:
-                #Alors on l'ajoute dans la liste des arete atteignable
-                Resultat.append((sommet1,sommet2))
+    
+    #Droites auxquel le sommet appartient
+    droites_du_sommet:set[int] = associations_droites[sommet]
+    
+    #Liste de retour a renvoye
+    R:List[Tuple[int,int]]=[]
 
-    return Resultat
+    #Pour chaque arete du graphe
+    for aretes in graphe.edges():
+        sommet1,sommet2 = aretes[0],aretes[1]
+        #Si aucune extremité n'est pas pas le sommet
+        if not(sommet1==sommet or sommet2==sommet):
+            #Pour chaque droite
+            for d in droites_du_sommet:
+                #Il faut que les deux sommet de l'arete soit sur la droite et que la distance entre eux et le sommet soit inferieur à 10
+                if sommet1 in droites[d] and sommet2 in droites[d] and longueur_arete(positions_sommets,sommet1,sommet)<=10 and  longueur_arete(positions_sommets,sommet2,sommet)<=10:
+                    R.append(aretes)
+    
+    return R
+
 
 def main(
         graphe:nx.Graph,
@@ -484,8 +446,7 @@ def main(
         #Pour chaque sommet:
         for sommet in graphe.nodes():
             #On calcul sa portee en fonction des arete du graph
-            voisins_indirect = liste_voisin_eloignes(positions,droites,associations_droites,sommet)
-            dict_aretes_voisines_indirect[sommet] = aretes_sur_droite(graphe,sommet,voisins_indirect)
+            dict_aretes_voisines_indirect[sommet] = arete_a_porte_indirect(graphe,positions,droites,associations_droites,sommet)
             valuation_sommet(graphe,dict_aretes_voisines_indirect[sommet],sommet,v_min,v_max)
 
         #On prend un sommet au hazard comme meilleu sommet

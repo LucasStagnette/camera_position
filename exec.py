@@ -1,10 +1,10 @@
 from fonctions import *
 
 #Lecture du fichier
-G,positions,droites,associations_droites = lecture("fichier/graphe6.txt")
+G,positions,droites,associations_droites = lecture("fichier/graphe2.txt")
 
 #Affichage de l'original
-affichage_simple(G,positions)
+#affichage_simple(G,positions)
 
 #Pretraitement du Graph
 graphe_original,v_min,v_max = pretraitement_graph(G,positions,droites,associations_droites)
