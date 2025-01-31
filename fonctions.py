@@ -338,7 +338,7 @@ def valuation_sommet(
     #Pour chaque arete a la portee du sommet
     for arete in aretes_voisines_indirect:
         #On comptabilise le poid de cette arete dans la portee du sommet
-        graphe.nodes[sommet]["portee"][int(graphe[arete[0]][arete[1]].get("poids"))] += 1
+        graphe.nodes[sommet]["portee"][int(graphe[arete[0]][arete[1]].get("poids"))-2+len(graphe.nodes[sommet]["portee"])//2] += 1
 
 def comparaison_sommet(graphe:nx.Graph,sommet_A:int,sommet_B:int) -> int:
     """
@@ -406,7 +406,6 @@ def arete_a_porte_indirect(
                     R.append(aretes)
     
     return R
-
 
 def main(
         graphe:nx.Graph,
